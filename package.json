@@ -1,0 +1,51 @@
+{
+  "name": "forma-pt-analysis-app",
+  "version": "1.0.0",
+  "description": "Forma PT Analysis App - Frontend/Backend Separation",
+  "private": true,
+  "workspaces": [
+    "frontend",
+    "backend"
+  ],
+  "scripts": {
+    "dev": "./scripts/dev.sh",
+    "start": "./scripts/start-dev.sh",
+    "build": "npm run build:frontend && npm run build:backend",
+    "build:frontend": "cd frontend && pnpm build",
+    "build:backend": "cd backend && npm run build",
+    "install:all": "cd frontend && pnpm install && cd ../backend && npm install",
+    "clean": "rm -rf frontend/.next frontend/node_modules backend/dist backend/node_modules",
+    "docker:up": "docker-compose up -d",
+    "docker:down": "docker-compose down",
+    "docker:logs": "docker-compose logs -f",
+    "docker:build": "docker-compose build",
+    "lint": "npm run lint:frontend && npm run lint:backend",
+    "lint:frontend": "cd frontend && pnpm lint",
+    "lint:backend": "cd backend && npm run lint",
+    "test": "npm run test:frontend && npm run test:backend",
+    "test:frontend": "cd frontend && pnpm test",
+    "test:backend": "cd backend && npm test"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "pnpm": ">=8.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-username/forma-pt-analysis-app.git"
+  },
+  "keywords": [
+    "physical-therapy",
+    "pose-analysis",
+    "ai-coaching",
+    "nextjs",
+    "express",
+    "cedaros",
+    "mastra"
+  ],
+  "author": "Your Name",
+  "license": "MIT"
+}

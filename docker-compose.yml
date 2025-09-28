@@ -1,0 +1,147 @@
+version: '3.8'
+
+services:
+  # Frontend (Next.js)
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+      - NEXT_PUBLIC_API_URL=http://localhost:3001/api
+      - NEXT_PUBLIC_APP_NAME=Forma
+      - NEXT_PUBLIC_APP_VERSION=1.0.0
+      - NEXT_PUBLIC_ENABLE_AI_ANALYSIS=true
+      - NEXT_PUBLIC_ENABLE_PROGRESS_TRACKING=true
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+      - /app/.next
+    depends_on:
+      - backend
+    networks:
+      - forma-network
+
+  # Backend (Express.js)
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.dev
+    ports:
+      - "3001:3001"
+    environment:
+      - NODE_ENV=development
+      - PORT=3001
+      - FRONTEND_URL=http://localhost:3000
+      - JWT_SECRET=your_super_secret_jwt_key_here
+      - JWT_EXPIRES_IN=7d
+      - BCRYPT_ROUNDS=12
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - CEDAROS_API_URL=http://cedaros:8080
+      - CEDAROS_API_KEY=${CEDAROS_API_KEY}
+      - MASTRA_API_URL=http://mastra:8081
+      - MASTRA_API_KEY=${MASTRA_API_KEY}
+      - DATABASE_URL=postgresql://forma:forma_password@postgres:5432/forma_db
+      - LOG_LEVEL=info
+      - CORS_ORIGINS=http://localhost:3000,http://localhost:3001
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+      - ./backend/logs:/app/logs
+      - ./backend/uploads:/app/uploads
+    depends_on:
+      - postgres
+      - cedaros
+      - mastra
+    networks:
+      - forma-network
+
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_DB=forma_db
+      - POSTGRES_USER=forma
+      - POSTGRES_PASSWORD=forma_password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - forma-network
+
+  # CedarOS Service
+  cedaros:
+    build:
+      context: ./services/cedaros
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      - NODE_ENV=development
+      - PORT=8080
+      - DATABASE_URL=postgresql://forma:forma_password@postgres:5432/forma_db
+      - LOG_LEVEL=info
+    volumes:
+      - ./services/cedaros:/app
+      - /app/node_modules
+    depends_on:
+      - postgres
+    networks:
+      - forma-network
+
+  # Mastra Service
+  mastra:
+    build:
+      context: ./services/mastra
+      dockerfile: Dockerfile
+    ports:
+      - "8081:8081"
+    environment:
+      - NODE_ENV=development
+      - PORT=8081
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - DATABASE_URL=postgresql://forma:forma_password@postgres:5432/forma_db
+      - LOG_LEVEL=info
+    volumes:
+      - ./services/mastra:/app
+      - /app/node_modules
+    depends_on:
+      - postgres
+    networks:
+      - forma-network
+
+  # Redis for caching and sessions
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - forma-network
+
+  # Nginx reverse proxy (disabled for now)
+  # nginx:
+  #   image: nginx:alpine
+  #   ports:
+  #     - "80:80"
+  #     - "443:443"
+  #   volumes:
+  #     - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+  #     - ./nginx/ssl:/etc/nginx/ssl
+  #   depends_on:
+  #     - frontend
+  #     - backend
+  #   networks:
+  #     - forma-network
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  forma-network:
+    driver: bridge
